@@ -63,8 +63,8 @@ rfm_score AS (
         *,
         -- ORDER BY Recency ASC guarantees that low days-since-purchase equals the highest score (4)
         NTILE(4) OVER (ORDER BY Recency ASC) AS R_Score, 
-        NTILE(4) OVER (ORDER BY Frequency ASC) AS F_Score,   
-        NTILE(4) OVER (ORDER BY Monetary ASC) AS M_Score     
+        NTILE(4) OVER (ORDER BY Frequency DESC) AS F_Score,   
+        NTILE(4) OVER (ORDER BY Monetary DESC) AS M_Score     
     FROM rfm_raw
 )
 SELECT 
