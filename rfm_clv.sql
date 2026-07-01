@@ -268,17 +268,7 @@ Exclude them from standard email/ad campaigns to save costs, or relegate them to
 
 
 
-/*                              CALCULATION OF CLV
-Assumptions
-This script assumes you have an Orders table with at least the following columns:
-
-CustomerID (Unique identifier for the customer)
-
-OrderID (Unique identifier for the transaction)
-
-OrderDate (Date of the transaction)
-
-TotalAmount (The total monetary value of the order)*/
+---                            CALCULATION OF CLV
 
 -- Define the assumed average lifespan of a customer in years (e.g., 3 years)
 DECLARE @AverageLifespanYears FLOAT = 3.0;
@@ -287,14 +277,14 @@ WITH CustomerMetrics AS (
     -- Step 1: Calculate core aggregates per customer
     SELECT 
         CustomerID,
-        COUNT(OrderID) AS TotalOrders,
-        SUM(TotalAmount) AS HistoricalCLV, -- Total revenue generated so far
-        MIN(OrderDate) AS FirstOrderDate,
-        MAX(OrderDate) AS LastOrderDate,
+        COUNT([InvoiceNo]) AS TotalOrders,
+        sum([UnitPrice]*[Quantity]) AS HistoricalCLV, -- Total revenue generated so far
+        MIN([InvoiceDate]) AS FirstOrderDate,
+        MAX([InvoiceDate]) AS LastOrderDate,
         -- Calculate individual lifespan in years based on their activity span
-        DATEDIFF(day, MIN(OrderDate), MAX(OrderDate)) / 365.25 AS ActiveLifespanYears
+        DATEDIFF(day,  MIN([InvoiceDate]), MAX([InvoiceDate])) / 365.25 AS ActiveLifespanYears
     FROM 
-        Orders
+      [dbo].[online_retail] 
     GROUP BY 
         CustomerID
 ),
@@ -360,18 +350,18 @@ FROM
         -- Derived Table: Aggregates base data and calculates frequency in a single pass
         SELECT 
             CustomerID,
-            COUNT(OrderID) AS TotalOrders,
-            SUM(TotalAmount) AS HistoricalRevenue,
+            COUNT([InvoiceNo]) AS TotalOrders,
+            SUM([UnitPrice]*[Quantity]) AS HistoricalRevenue,
             -- Calculate Average Order Value (AOV) directly
-            SUM(TotalAmount) / COUNT(OrderID) AS AOV,
+            SUM([UnitPrice]*[Quantity]) /  COUNT([InvoiceNo]) AS AOV,
             -- Calculate Annual Purchase Frequency inline
             CASE 
-                WHEN DATEDIFF(DAY, MIN(OrderDate), MAX(OrderDate)) > 0 
-                THEN (COUNT(OrderID) * 365.25) / DATEDIFF(DAY, MIN(OrderDate), MAX(OrderDate))
-                ELSE COUNT(OrderID)
+                WHEN DATEDIFF(DAY, MIN([InvoiceDate]), MAX([InvoiceDate])) > 0 
+                THEN (COUNT([InvoiceNo])* 365.25) / DATEDIFF(DAY, MIN([InvoiceDate]), MAX([InvoiceDate]))
+                ELSE  COUNT([InvoiceNo])
             END AS AnnualFrequency
         FROM 
-            Orders
+           [dbo].[online_retail] 
         GROUP BY 
             CustomerID
     ) AS Metrics
